@@ -25,21 +25,22 @@ Main goal of my re-implementation is to build a fully automated system that:
 •	Calculates which team has ball possession using spatial proximity
 •	Keep it lightweight
 
-3. Player & Ball Detection (YOLOv8)
+**Player & Ball Detection (YOLOv8)**
 The first stage uses YOLOv8n, a lightweight object detection model:
 The player detection step uses the YOLOv8 model, pretrained on the COCO dataset.
 It detects all visible players in each frame with high confidence, filtering out other people or objects. After detecting the players, the system crops each bounding box to isolate only the upper torso area, where the jersey color is dominant.
 This region is crucial for the next step — team classification using color clustering.
 In the ball detection, I prepared custom frames with a ball bounding box. And a custom-trained it with YOLOv8 model which is best.pt. It gas high precision 98% and recall 92%
 
-Kmeans Clustering 
+**Kmeans Clustering**
 Instead of manually defining HSV thresholds, the system applies unsupervised KMeans clustering:
 •	Collects color features during a warm-up phase (first 40 frames).
 •	Clusters into two groups (Team A, Team B).
 •	Computes per-cluster thresholds to reject outliers (e.g., referees).
 •	Smooths centroids over time using Exponential Moving Average (EMA) for stability.
 This allows the model to adapt to lighting changes and color variations dynamically.
-Player Tracking (Norfair)
+
+**Player Tracking (Norfair)**
 To maintain consistent player IDs across frames, the system uses Norfair, a lightweight tracker:
 •	Converts YOLO detections into Norfair Detection objects.
 •	Uses Euclidean distance matching between consecutive frames.
@@ -47,14 +48,13 @@ To maintain consistent player IDs across frames, the system uses Norfair, a ligh
 To handle temporary detection noise, each track keeps a short inertia history window (20 frames) that votes for the most frequent recent label (Team A, Team B, etc.)
 
 
-
-Ball Possession Estimation
+**Ball Possession Estimation**
 The system computes the center of the detected ball and measures its distance to all players’ bounding box centers.
 •	The nearest player determines the current possession team.
 •	If detection is missing temporarily, possession is held for a short memory window (hold_ms = 800ms).
 Possession counts are accumulated per team and visualized as a possession bar at the bottom of the frame.
 
-Results & Discussion
+**Results & Discussion**
 •	The system successfully detects, labels, and tracks all players through unsupervised learning.
 •	Each player maintains a consistent ID across frames.
 •	Referees and outliers are handled properly.
